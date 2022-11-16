@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Display};
 
-pub mod needleman_wunsch;
-pub mod smith_waterman;
+pub mod pw_needleman_wunsch;
+pub mod pw_smith_waterman;
 
 pub trait Align {
     fn align(&mut self) -> Alignment;
