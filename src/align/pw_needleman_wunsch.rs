@@ -25,7 +25,6 @@ impl<'a> Align for Aligner<'a> {
     fn align(&mut self) -> Alignment {
         self.init();
         self.fill();
-
         let (a, b) = self.backtrace();
 
         Alignment {

@@ -11,5 +11,8 @@
 //! pair score) and has been implemented in a software program for constructing multiple
 //! sequence alignments.
 //!
-//! A tool for multiple sequence alignment.
+//! The Multiple Sequence Alignment Problem in Biology:
+//! https://zenodo.org/record/1236134
+//!
+//! A tool for multiple sequence alignment:
 //! https://www.ncbi.nlm.nih.gov/pmc/articles/PMC287279/?page=1
