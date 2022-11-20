@@ -31,6 +31,8 @@ impl<'a> Align for Aligner<'a> {
             grid: self.grid.to_owned(),
             a,
             b,
+            a_orig: self.a.to_string(),
+            b_orig: self.b.to_string(),
         }
     }
 }
@@ -137,6 +139,8 @@ mod tests {
     fn test_aligner_align() {
         let mut a = Aligner::new("GCATGCG", "GATTACA");
         let alignment = a.align();
+
+        // println!("{:?}", alignment);
 
         assert_eq!("GCAT-GCG", alignment.a);
         assert_eq!("G-ATTACA", alignment.b);

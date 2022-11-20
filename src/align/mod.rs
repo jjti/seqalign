@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Display};
 
-pub mod pw_needleman_wunsch;
-pub mod pw_smith_waterman;
+pub mod needleman_wunsch;
+pub mod smith_waterman;
 
 pub trait Align {
     fn align(&mut self) -> Alignment;
@@ -11,6 +11,8 @@ pub struct Alignment {
     grid: Vec<Vec<i32>>,
     a: String,
     b: String,
+    a_orig: String,
+    b_orig: String,
 }
 
 impl Display for Alignment {
@@ -28,27 +30,27 @@ impl Debug for Alignment {
         let header = format!("{}\n{}\n", self.a, self.b);
         let mut result: Vec<String> = vec![header];
 
-        for i in 0..self.grid.len() {
+        for i in 0..self.b_orig.len() + 1 {
             // Write seq A header row.
             if i == 0 {
-                result.push("   |    | ".to_string());
-                self.a
+                result.push("   |    |".to_string());
+                self.a_orig
                     .chars()
-                    .for_each(|c| result.push(format!("{: <3}| ", c)));
+                    .for_each(|c| result.push(format!(" {: <3}|", c)));
                 result.push("\n".to_string());
             }
 
             // Write first column of grid.
             if i == 0 {
-                result.push("   | ".to_string());
+                result.push("   |".to_string());
             } else {
-                result.push(format!("{: <3}| ", self.b.chars().nth(i - 1).unwrap()));
+                result.push(format!("{: <3}|", self.b_orig.chars().nth(i - 1).unwrap()));
             }
 
             // Write each character of the grid.
             self.grid[i]
                 .iter()
-                .for_each(|f| result.push(format!("{: <3}| ", f)));
+                .for_each(|f| result.push(format!(" {: <3}|", f)));
             result.push("\n".to_string());
         }
 
@@ -75,15 +77,17 @@ mod tests {
             grid: vec![vec![0, -1, -2, -3], vec![-1, 0, 0, 1], vec![-2, 0, 1, 1]],
             a: "AGC".to_string(),
             b: "CG".to_string(),
+            a_orig: "AGC".to_string(),
+            b_orig: "CG".to_string(),
         };
 
         assert_eq!(
             "AGC
 CG
-   |    | A  | G  | C  | 
-   | 0  | -1 | -2 | -3 | 
-C  | -1 | 0  | 0  | 1  | 
-G  | -2 | 0  | 1  | 1  | 
+   |    | A  | G  | C  |
+   | 0  | -1 | -2 | -3 |
+C  | -1 | 0  | 0  | 1  |
+G  | -2 | 0  | 1  | 1  |
 ",
             format!("{:?}", a)
         )
