@@ -28,6 +28,7 @@
 //! an adjacent gap in the alignment.
 
 use super::{Align, Alignment, Scoring};
+use crate::io::matrix::{Matrix, MATRIX};
 
 struct Aligner<'a> {
     grid: Vec<Vec<i32>>,

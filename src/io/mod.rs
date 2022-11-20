@@ -1,2 +1,2 @@
 pub mod fasta;
-pub mod pam;
+pub mod matrix;

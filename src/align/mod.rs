@@ -1,3 +1,4 @@
+use crate::io::matrix::Matrix;
 use std::fmt::{Debug, Display};
 
 pub mod needleman_wunsch;
@@ -59,10 +60,9 @@ impl Debug for Alignment {
 }
 
 pub struct Scoring {
-    /// match
-    m: i32,
-    /// mismatch
-    mm: i32,
+    /// replacement matrix
+    m: Matrix,
+
     /// insertion or deletion
     indel: i32,
 }
