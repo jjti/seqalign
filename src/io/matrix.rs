@@ -1,4 +1,5 @@
 //! https://en.wikipedia.org/wiki/Point_accepted_mutation
+//!
 //! A PAM matrix is a matrix where each column and row represents one of the twenty standard
 //! amino acids. In bioinformatics, PAM matrices are sometimes used as substitution matrices
 //! to score sequence alignments for proteins. Each entry in a PAM matrix indicates
@@ -7,6 +8,23 @@
 //! specified evolutionary interval, rather than these two amino acids being aligned
 //! due to chance. Different PAM matrices correspond to different lengths of time in the
 //! evolution of the protein sequence.
+//!
+//! BLOSUM matrices with high numbers are designed for comparing closely related sequences,
+//! while those with low numbers are designed for comparing distant related sequences.
+//! For example, BLOSUM80 is used for closely related alignments,
+//! and BLOSUM45 is used for more distantly related alignments.
+//! The matrices were created by merging (clustering) all sequences that were more
+//! similar than a given percentage into one single sequence and then comparing those
+//! sequences (that were all more divergent than the given percentage value) only;
+//! thus reducing the contribution of closely related sequences. The percentage used was
+//! appended to the name, giving BLOSUM80 for example where sequences that were more than
+//! 80% identical were clustered.
+//!
+//! BLOSUM r: the matrix built from blocks with less than r% of similarity –
+//! E.g., BLOSUM62 is the matrix built using sequences with less than 62% similarity
+//! (sequences with ≥ 62% identity were clustered) – Note: BLOSUM 62 is the default
+//! matrix for protein BLAST. Experimentation has shown that the BLOSUM-62 matrix is
+//! among the best for detecting most weak protein similarities.[1]
 //!
 //! open question: how are the PAM matricies used in BLAST for DNA? Does the DNA
 //! have to correspond to a translation?
