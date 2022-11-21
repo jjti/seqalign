@@ -12,7 +12,9 @@
 //! TODO: add support for PAM and BLOSUM similarity matricies:
 //! https://en.wikipedia.org/wiki/Point_accepted_mutation
 //! https://en.wikipedia.org/wiki/BLOSUM
+
 use super::{Align, Alignment, Scoring};
+use crate::io::matrix;
 
 struct Aligner<'a> {
     grid: Vec<Vec<i32>>,
@@ -44,8 +46,7 @@ impl<'a> Aligner<'a> {
             a,
             b,
             scoring: Scoring {
-                m: 1,
-                mm: -1,
+                m: matrix::MATRIX::NUC.read(),
                 indel: -1,
             },
         }
@@ -74,13 +75,15 @@ impl<'a> Aligner<'a> {
                     self.grid[i][j - 1] + self.scoring.indel,
                 ];
 
-                if a[j - 1] == b[i - 1] {
-                    // match
-                    opts.push(self.grid[i - 1][j - 1] + self.scoring.m);
-                } else {
-                    // mismatch
-                    opts.push(self.grid[i - 1][j - 1] + self.scoring.mm);
-                }
+                // match or mismatch
+                let match_val = self
+                    .scoring
+                    .m
+                    .get(&a[j - 1])
+                    .unwrap()
+                    .get(&b[i - 1])
+                    .unwrap();
+                opts.push(self.grid[i - 1][j - 1] + match_val);
 
                 self.grid[i][j] = opts.iter().max().unwrap().to_owned();
             }

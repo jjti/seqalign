@@ -17,10 +17,11 @@ use std::fs;
 // Matrix is a single alignment matrix used in scoring an alignment.
 //
 // Maps a char to another char and the corresponding substitution penalty.
-pub type Matrix = HashMap<char, HashMap<char, i8>>;
+pub type Matrix = HashMap<u8, HashMap<u8, i32>>;
 
 #[derive(Debug)]
 pub enum MATRIX {
+    NUC,
     PAM10,
     PAM50,
     PAM100,
@@ -32,29 +33,41 @@ pub enum MATRIX {
 
 impl MATRIX {
     pub fn read(&self) -> Matrix {
-        read(format!("{:?}", self))
+        let matrix = format!("{:?}", self);
+
+        if matrix == "NUC" {
+            read("NUC.4.4".to_string())
+        } else {
+            read(matrix)
+        }
     }
 }
 
 // read returns a new PAM matrix parsed from a given file.
 fn read(f: String) -> Matrix {
-    let aas = "ARNDCQEGHILKMFPSTWYVBZX*".as_bytes();
+    let mut aas: Vec<u8> = Vec::new();
     let mut m: Matrix = HashMap::new();
 
     let contents = fs::read_to_string(format!("matricies/{}", f.to_string())).unwrap();
     for l in contents.lines() {
-        if l.starts_with("#") || l.starts_with(" ") {
+        if l.starts_with("#") {
+            continue;
+        }
+        if l.starts_with(" ") {
+            for c in l.split_whitespace() {
+                aas.push(c.chars().nth(0).unwrap() as u8);
+            }
             continue;
         }
 
         let mut row = l.split_whitespace();
-        let aa = row.next().unwrap().chars().next().unwrap();
-        let mut mm: HashMap<char, i8> = HashMap::new();
-        for (i, v) in row.map(|f| f.parse::<i8>().unwrap()).enumerate() {
+        let aa = row.next().unwrap().chars().next().unwrap() as u8;
+        let mut mm: HashMap<u8, i32> = HashMap::new();
+        for (i, v) in row.map(|f| f.parse::<i32>().unwrap()).enumerate() {
             let sub = aas[i];
-            mm.insert(sub as char, v);
+            mm.insert(sub, v);
         }
-        m.insert(aa, mm);
+        m.insert(aa as u8, mm);
     }
 
     m
@@ -76,7 +89,7 @@ mod tests {
         let m = MATRIX::PAM50.read();
 
         for (l, r, v) in vec![('A', 'A', 5), ('C', 'R', -6), ('A', 'D', -2)] {
-            assert_eq!(v, *m.get(&l).unwrap().get(&r).unwrap());
+            assert_eq!(v, *m.get(&(l as u8)).unwrap().get(&(r as u8)).unwrap());
         }
     }
 }

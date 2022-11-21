@@ -28,7 +28,7 @@
 //! an adjacent gap in the alignment.
 
 use super::{Align, Alignment, Scoring};
-use crate::io::matrix::{Matrix, MATRIX};
+use crate::io::matrix::MATRIX;
 
 struct Aligner<'a> {
     grid: Vec<Vec<i32>>,
@@ -60,8 +60,7 @@ impl<'a> Aligner<'a> {
             a,
             b,
             scoring: Scoring {
-                m: 3,
-                mm: -3,
+                m: MATRIX::NUC.read(),
                 indel: -2,
             },
         }
@@ -88,13 +87,15 @@ impl<'a> Aligner<'a> {
                     self.grid[i][j - 1] + self.scoring.indel,
                 ];
 
-                if a[j - 1] == b[i - 1] {
-                    // match
-                    opts.push(self.grid[i - 1][j - 1] + self.scoring.m);
-                } else {
-                    // mismatch
-                    opts.push(self.grid[i - 1][j - 1] + self.scoring.mm);
-                }
+                // match or mismatch
+                let match_val = self
+                    .scoring
+                    .m
+                    .get(&a[j - 1])
+                    .unwrap()
+                    .get(&b[i - 1])
+                    .unwrap();
+                opts.push(self.grid[i - 1][j - 1] + match_val);
 
                 self.grid[i][j] = opts.iter().max().unwrap().to_owned();
             }
