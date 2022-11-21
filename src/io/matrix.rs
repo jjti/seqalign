@@ -61,7 +61,12 @@ fn read(f: String) -> Matrix {
         }
 
         let mut row = l.split_whitespace();
-        let aa = row.next().unwrap().chars().next().unwrap() as u8;
+        let aa: u8;
+        if let Some(cols) = row.next() {
+            aa = cols.chars().next().unwrap() as u8;
+        } else {
+            continue;
+        }
         let mut mm: HashMap<u8, i32> = HashMap::new();
         for (i, v) in row.map(|f| f.parse::<i32>().unwrap()).enumerate() {
             let sub = aas[i];
@@ -79,6 +84,8 @@ mod tests {
 
     #[test]
     fn test_read() {
+        let m = MATRIX::NUC.read();
+        assert_eq!(-4, *m.get(&('A' as u8)).unwrap().get(&('G' as u8)).unwrap());
         MATRIX::PAM10.read();
         MATRIX::PAM250.read();
         MATRIX::BLOSUM50.read();
