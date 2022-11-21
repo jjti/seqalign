@@ -40,15 +40,12 @@ impl<'a> Align for Aligner<'a> {
 }
 
 impl<'a> Aligner<'a> {
-    pub fn new(a: &'a str, b: &'a str) -> Aligner<'a> {
+    pub fn new(a: &'a str, b: &'a str, scoring: Scoring) -> Aligner<'a> {
         Aligner {
             grid: Vec::new(),
             a,
             b,
-            scoring: Scoring {
-                m: matrix::MATRIX::NUC.read(),
-                indel: -1,
-            },
+            scoring,
         }
     }
 
@@ -71,14 +68,14 @@ impl<'a> Aligner<'a> {
             for j in 1..a.len() + 1 {
                 let mut opts: Vec<i32> = vec![
                     // indel
-                    self.grid[i - 1][j] + self.scoring.indel,
-                    self.grid[i][j - 1] + self.scoring.indel,
+                    self.grid[i - 1][j] + self.scoring.gap,
+                    self.grid[i][j - 1] + self.scoring.gap,
                 ];
 
                 // match or mismatch
                 let match_val = self
                     .scoring
-                    .m
+                    .rm
                     .get(&a[j - 1])
                     .unwrap()
                     .get(&b[i - 1])
@@ -140,10 +137,18 @@ mod tests {
 
     #[test]
     fn test_aligner_align() {
-        let mut a = Aligner::new("GCATGCG", "GATTACA");
+        let mut a = Aligner::new(
+            "GCATGCG",
+            "GATTACA",
+            Scoring {
+                rm: matrix::MATRIX::NUC.read(),
+                gap: -1,
+                gap_extend: -1,
+            },
+        );
         let alignment = a.align();
 
-        // println!("{:?}", alignment);
+        println!("{:?}", alignment);
 
         assert_eq!("GCAT-GCG", alignment.a);
         assert_eq!("G-ATTACA", alignment.b);

@@ -28,7 +28,6 @@
 //! an adjacent gap in the alignment.
 
 use super::{Align, Alignment, Scoring};
-use crate::io::matrix::MATRIX;
 
 struct Aligner<'a> {
     grid: Vec<Vec<i32>>,
@@ -54,15 +53,12 @@ impl<'a> Align for Aligner<'a> {
 }
 
 impl<'a> Aligner<'a> {
-    pub fn new(a: &'a str, b: &'a str) -> Aligner<'a> {
+    pub fn new(a: &'a str, b: &'a str, scoring: Scoring) -> Aligner<'a> {
         Aligner {
             grid: Vec::new(),
             a,
             b,
-            scoring: Scoring {
-                m: MATRIX::NUC.read(),
-                indel: -2,
-            },
+            scoring,
         }
     }
 
@@ -83,14 +79,14 @@ impl<'a> Aligner<'a> {
                     // negative values are ignored, 0 is as low as we'll go
                     0,
                     // gap
-                    self.grid[i - 1][j] + self.scoring.indel,
-                    self.grid[i][j - 1] + self.scoring.indel,
+                    self.grid[i - 1][j] + self.scoring.gap,
+                    self.grid[i][j - 1] + self.scoring.gap,
                 ];
 
                 // match or mismatch
                 let match_val = self
                     .scoring
-                    .m
+                    .rm
                     .get(&a[j - 1])
                     .unwrap()
                     .get(&b[i - 1])
@@ -164,10 +160,19 @@ impl<'a> Aligner<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::io::matrix::MATRIX;
 
     #[test]
     fn test_aligner_align() {
-        let mut a = Aligner::new("TGTTACGG", "GGTTGACTA");
+        let mut a = Aligner::new(
+            "TGTTACGG",
+            "GGTTGACTA",
+            Scoring {
+                rm: MATRIX::NUC.read(),
+                gap: -2,
+                gap_extend: -1,
+            },
+        );
         let alignment = a.align();
 
         println!("{:?}", alignment);

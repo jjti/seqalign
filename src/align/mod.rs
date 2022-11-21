@@ -61,10 +61,13 @@ impl Debug for Alignment {
 
 pub struct Scoring {
     /// replacement matrix
-    m: Matrix,
+    rm: Matrix,
 
-    /// insertion or deletion
-    indel: i32,
+    /// gap penalty
+    gap: i32,
+
+    /// gap extend penalty
+    gap_extend: i32,
 }
 
 #[cfg(test)]

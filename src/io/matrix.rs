@@ -14,9 +14,9 @@
 use std::collections::HashMap;
 use std::fs;
 
-// Matrix is a single alignment matrix used in scoring an alignment.
-//
-// Maps a char to another char and the corresponding substitution penalty.
+/// Matrix is a single alignment matrix used in scoring an alignment.
+///
+/// Maps a char to another char and the corresponding substitution penalty.
 pub type Matrix = HashMap<u8, HashMap<u8, i32>>;
 
 #[derive(Debug)]
@@ -43,7 +43,7 @@ impl MATRIX {
     }
 }
 
-// read returns a new PAM matrix parsed from a given file.
+/// read returns a new PAM matrix parsed from a given file.
 fn read(f: String) -> Matrix {
     let mut aas: Vec<u8> = Vec::new();
     let mut m: Matrix = HashMap::new();
@@ -67,6 +67,7 @@ fn read(f: String) -> Matrix {
         } else {
             continue;
         }
+
         let mut mm: HashMap<u8, i32> = HashMap::new();
         for (i, v) in row.map(|f| f.parse::<i32>().unwrap()).enumerate() {
             let sub = aas[i];
@@ -86,6 +87,7 @@ mod tests {
     fn test_read() {
         let m = MATRIX::NUC.read();
         assert_eq!(-4, *m.get(&('A' as u8)).unwrap().get(&('G' as u8)).unwrap());
+
         MATRIX::PAM10.read();
         MATRIX::PAM250.read();
         MATRIX::BLOSUM50.read();
