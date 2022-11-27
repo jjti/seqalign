@@ -39,7 +39,7 @@ pub type Matrix = HashMap<u8, HashMap<u8, i32>>;
 
 #[derive(Debug)]
 pub enum MATRIX {
-    NUC,
+    DNAfull,
     PAM10,
     PAM50,
     PAM100,
@@ -53,7 +53,7 @@ impl MATRIX {
     pub fn read(&self) -> Matrix {
         let matrix = format!("{:?}", self);
 
-        if matrix == "NUC" {
+        if matrix == "DNAfull" {
             read("NUC.4.4".to_string())
         } else {
             read(matrix)
@@ -103,7 +103,7 @@ mod tests {
 
     #[test]
     fn test_read() {
-        let m = MATRIX::NUC.read();
+        let m = MATRIX::DNAfull.read();
         assert_eq!(-4, *m.get(&('A' as u8)).unwrap().get(&('G' as u8)).unwrap());
 
         MATRIX::PAM10.read();

@@ -13,11 +13,11 @@
 //! https://en.wikipedia.org/wiki/Point_accepted_mutation
 //! https://en.wikipedia.org/wiki/BLOSUM
 
-use super::{Align, Alignment, Scoring};
+use super::{Align, Alignment, Scoring, Step};
 use crate::io::matrix;
 
 struct Aligner<'a> {
-    grid: Vec<Vec<i32>>,
+    grid: Vec<Vec<Step>>,
     a: &'a str,
     b: &'a str,
     scoring: Scoring,
@@ -51,12 +51,29 @@ impl<'a> Aligner<'a> {
 
     fn init(&mut self) {
         for i in 0..self.b.len() + 1 {
-            self.grid.push(vec![0; self.a.len() + 1]);
-            self.grid[i][0] = -(i as i32);
+            self.grid.push(vec![Step::default(); self.a.len() + 1]);
+
+            self.grid[i][0] = Step {
+                i,
+                j: 0,
+                val: -(i as i32),
+                next: match i {
+                    0 => None,
+                    _ => Some((i - 1, 0)),
+                },
+            };
         }
 
         for j in 0..self.a.len() + 1 {
-            self.grid[0][j] = -(j as i32);
+            self.grid[0][j] = Step {
+                i: 0,
+                j,
+                val: -(j as i32),
+                next: match j {
+                    0 => None,
+                    _ => Some((0, j - 1)),
+                },
+            };
         }
     }
 
@@ -66,23 +83,38 @@ impl<'a> Aligner<'a> {
 
         for i in 1..b.len() + 1 {
             for j in 1..a.len() + 1 {
-                let mut opts: Vec<i32> = vec![
+                let mut opts: Vec<Step> = vec![
                     // indel
-                    self.grid[i - 1][j] + self.scoring.gap,
-                    self.grid[i][j - 1] + self.scoring.gap,
+                    Step {
+                        i,
+                        j,
+                        val: self.grid[i - 1][j].val + self.scoring.gap_opening,
+                        next: Some((i - 1, j)),
+                    },
+                    Step {
+                        i,
+                        j,
+                        val: self.grid[i][j - 1].val + self.scoring.gap_opening,
+                        next: Some((i, j - 1)),
+                    },
                 ];
 
                 // match or mismatch
                 let match_val = self
                     .scoring
-                    .rm
+                    .replacement
                     .get(&a[j - 1])
                     .unwrap()
                     .get(&b[i - 1])
                     .unwrap();
-                opts.push(self.grid[i - 1][j - 1] + match_val);
+                opts.push(Step {
+                    val: self.grid[i - 1][j - 1].val + match_val,
+                    i,
+                    j,
+                    next: Some((i - 1, j - 1)),
+                });
 
-                self.grid[i][j] = opts.iter().max().unwrap().to_owned();
+                self.grid[i][j] = opts.iter().max().unwrap().clone();
             }
         }
     }
@@ -93,36 +125,37 @@ impl<'a> Aligner<'a> {
         let mut a_row: Vec<u8> = Vec::new();
         let mut b_row: Vec<u8> = Vec::new();
 
-        let mut i = self.b.len();
-        let mut j = self.a.len();
+        let mut step = &self.grid[self.grid.len() - 1][self.a.len()];
+        while let Some((next_i, next_j)) = step.next {
+            let i_delta = step.i - next_i;
+            let j_delta = step.j - next_j;
 
-        while i > 0 || j > 0 {
-            let mut opts: Vec<i32> = Vec::new();
-            if i > 0 && j > 0 {
-                opts.push(self.grid[i - 1][j - 1]); // match or mismatch
-            }
-            if i > 0 {
-                opts.push(self.grid[i - 1][j]); // gap
-            }
-            if j > 0 {
-                opts.push(self.grid[i][j - 1]); // gap
+            if i_delta == 1 && j_delta == 1 {
+                // match/mismatch
+                a_row.push(a[step.j - 1]);
+                b_row.push(b[step.i - 1]);
+            } else if i_delta > 0 {
+                // gap in seq a
+                let mut i = step.i;
+                while i > next_i {
+                    a_row.push(b'-');
+                    b_row.push(b[i - 1]);
+                    i -= 1;
+                }
+            } else if j_delta > 0 {
+                // gap in seq b
+                let mut j = step.j;
+                while j > next_j {
+                    a_row.push(a[j - 1]);
+                    b_row.push(b'-');
+                    j -= 1;
+                }
+            } else {
+                panic!("unexpected step");
             }
 
-            let max = opts.iter().max().unwrap().to_owned();
-            if i > 0 && j > 0 && self.grid[i - 1][j - 1] == max {
-                a_row.push(a[j - 1]);
-                b_row.push(b[i - 1]);
-                i -= 1;
-                j -= 1;
-            } else if i > 0 && self.grid[i - 1][j] == max {
-                a_row.push('-' as u8);
-                b_row.push(b[i - 1]);
-                i -= 1;
-            } else if j > 0 && self.grid[i][j - 1] == max {
-                a_row.push(a[j - 1]);
-                b_row.push('-' as u8);
-                j -= 1;
-            }
+            // move to the next step in the alignment
+            step = &self.grid[next_i][next_j];
         }
 
         let top: String = a_row.iter().rev().map(|c| *c as char).collect();
@@ -141,16 +174,19 @@ mod tests {
             "GCATGCG",
             "GATTACA",
             Scoring {
-                rm: matrix::MATRIX::NUC.read(),
-                gap: -1,
-                gap_extend: -1,
+                replacement: matrix::MATRIX::DNAfull.read(),
+                gap_opening: -1,
+                gap_extension: -1,
             },
         );
         let alignment = a.align();
 
         println!("{:?}", alignment);
 
-        assert_eq!("GCAT-GCG", alignment.a);
-        assert_eq!("G-ATTACA", alignment.b);
+        // TODO: remove this add adding back a replacement matrix that's 1 for match, -1 for mismatch
+        assert_eq!("GCA-T-GC-G", alignment.a);
+        assert_eq!("G-ATTA-CA-", alignment.b);
+        // assert_eq!("GCAT-GCG", alignment.a);
+        // assert_eq!("G-ATTACA", alignment.b);
     }
 }
