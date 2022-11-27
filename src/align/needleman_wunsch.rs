@@ -14,7 +14,6 @@
 //! https://en.wikipedia.org/wiki/BLOSUM
 
 use super::{Align, Alignment, Scoring, Step};
-use crate::io::matrix;
 
 struct Aligner<'a> {
     grid: Vec<Vec<Step>>,
@@ -166,6 +165,8 @@ impl<'a> Aligner<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::matrices::MATCH::MATRIX;
+
     use super::*;
 
     #[test]
@@ -174,7 +175,7 @@ mod tests {
             "GCATGCG",
             "GATTACA",
             Scoring {
-                replacement: matrix::MATRIX::DNAfull.read(),
+                replacement: MATRIX.clone(),
                 gap_opening: -1,
                 gap_extension: -1,
             },
@@ -183,10 +184,7 @@ mod tests {
 
         println!("{:?}", alignment);
 
-        // TODO: remove this add adding back a replacement matrix that's 1 for match, -1 for mismatch
-        assert_eq!("GCA-T-GC-G", alignment.a);
-        assert_eq!("G-ATTA-CA-", alignment.b);
-        // assert_eq!("GCAT-GCG", alignment.a);
-        // assert_eq!("G-ATTACA", alignment.b);
+        assert_eq!("GCA-TGCG", alignment.a);
+        assert_eq!("G-ATTACA", alignment.b);
     }
 }

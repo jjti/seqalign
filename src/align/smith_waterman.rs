@@ -194,7 +194,7 @@ impl<'a> Aligner<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::io::matrix::MATRIX;
+    use crate::matrices::NUC_4_4;
 
     #[test]
     fn test_aligner_align_small() {
@@ -202,7 +202,7 @@ mod tests {
             "GTT",
             "GAT",
             Scoring {
-                replacement: MATRIX::DNAfull.read(),
+                replacement: NUC_4_4::MATRIX.clone(),
                 gap_opening: -2,
                 gap_extension: -2,
             },
@@ -222,7 +222,7 @@ mod tests {
             "TGTTACGG",
             "GGTTGACTA",
             Scoring {
-                replacement: MATRIX::DNAfull.read(),
+                replacement: NUC_4_4::MATRIX.clone(),
                 gap_opening: -2,
                 gap_extension: -2,
             },
@@ -243,7 +243,7 @@ mod tests {
             "TACGGGCCCGCTAC",
             "TAGCCCTATCGGTCA",
             Scoring {
-                replacement: MATRIX::DNAfull.read(),
+                replacement: NUC_4_4::MATRIX.clone(),
                 gap_opening: -1,
                 gap_extension: -1,
             },
@@ -253,7 +253,7 @@ mod tests {
         println!("{:?}", alignment);
 
         assert_eq!("TACGGGCCCGCTA-C", alignment.a);
-        assert_eq!("TA-G--CCC--TATC", alignment.b);
+        assert_eq!("TA---G-CC-CTATC", alignment.b);
     }
 
     /// differing penalty for gap opening vs extension
@@ -264,7 +264,7 @@ mod tests {
             "TACGGGCCCGCTAC",
             "TAGCCCTATCGGTCA",
             Scoring {
-                replacement: MATRIX::DNAfull.read(),
+                replacement: NUC_4_4::MATRIX.clone(),
                 gap_opening: -5,
                 gap_extension: -1,
             },
@@ -274,6 +274,6 @@ mod tests {
         println!("{:?}", alignment);
 
         assert_eq!("TACGGGCCCGCTA", alignment.a);
-        assert_eq!("TA---GCCC--TA", alignment.b);
+        assert_eq!("TA---GCC--CTA", alignment.b);
     }
 }

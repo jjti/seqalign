@@ -4,9 +4,11 @@ edit:
 test:
 	cargo test
 
-matricies:
-	cd matricies && \
+matrices:
+	cd ./src/matrices/data && \
 		wget -r ftp://ftp.ncbi.nlm.nih.gov/blast/matrices/ && \
-		mv ftp.ncbi.nlm.nih.gov/blast/blast/matricies/* . && \
+		mv ftp.ncbi.nlm.nih.gov/blast/matrices/* . && \
 		rm -rf ftp.ncbi.nlm.nih.gov
+	
+	python3 src/matrices/codegen.py
 

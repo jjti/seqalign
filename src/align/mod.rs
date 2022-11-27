@@ -1,5 +1,6 @@
-use crate::io::matrix::Matrix;
 use std::fmt::{Debug, Display};
+
+use crate::matrices::Matrix;
 
 pub mod needleman_wunsch;
 pub mod smith_waterman;
