@@ -5,8 +5,8 @@ use crate::matrices::Matrix;
 pub mod needleman_wunsch;
 pub mod smith_waterman;
 
-pub trait Align {
-    fn align(&mut self) -> Alignment;
+pub trait PWAlign {
+    fn align(&mut self) -> PWAlignment;
 }
 
 /// Step is a single step through an alignment.
@@ -64,7 +64,7 @@ impl PartialOrd for Step {
     }
 }
 
-pub struct Alignment {
+pub struct PWAlignment {
     /// grid holds the alignment of the two sequences
     grid: Vec<Vec<Step>>,
 
@@ -81,7 +81,36 @@ pub struct Alignment {
     b_orig: String,
 }
 
-impl Display for Alignment {
+impl PWAlignment {
+    /// distance calculates the pairwise distance between two sequences.
+    ///
+    /// Described in https://www.ncbi.nlm.nih.gov/pmc/articles/PMC308517/pdf/nar00046-0131.pdf
+    ///
+    /// These scores are calculated as the number of identities in the best alignment divided
+    /// by the number of residues compared (gap positions are excluded).
+    /// Both of these scores are initially calculated as per cent identity
+    /// scores and are converted to distances by dividing by 100 and
+    /// subtracting from 1.0 to give number of differences per site.
+    fn distance(&self) -> f32 {
+        let b = self.b.as_bytes();
+
+        let mut residues: f32 = 0.0;
+        let mut identities: f32 = 0.0;
+        for (i, c) in self.a.as_bytes().iter().enumerate() {
+            let c2 = b[i];
+            if *c == b'-' || c2 == b'-' {
+                continue;
+            }
+            residues += 1.0;
+            if *c == c2 {
+                identities += 1.0;
+            }
+        }
+        (residues - identities) / residues
+    }
+}
+
+impl Display for PWAlignment {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}\n{}", self.a, self.b)
     }
@@ -91,7 +120,7 @@ impl Display for Alignment {
 // https://doc.rust-lang.org/std/fmt/index.html#formatting-traits
 //
 // fmt::Debug implementations should be implemented for all public types.
-impl Debug for Alignment {
+impl Debug for PWAlignment {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let header = format!("{}\n{}\n", self.a, self.b);
         let mut result: Vec<String> = vec![header];
@@ -142,7 +171,7 @@ mod tests {
 
     #[test]
     fn test_alignment_debug() {
-        let a = Alignment {
+        let a = PWAlignment {
             grid: vec![
                 vec![
                     Step::from(0, 0, 0),
@@ -179,5 +208,18 @@ G  | -2 | 0  | 1  | 1  |
 ",
             format!("{:?}", a)
         )
+    }
+
+    #[test]
+    fn test_alignment_distance() {
+        let a = PWAlignment {
+            grid: Vec::new(),
+            a: "ACCGT".to_string(),
+            b: "AG-CT".to_string(),
+            a_orig: "".to_string(),
+            b_orig: "".to_string(),
+        };
+
+        assert_eq!(0.5, a.distance())
     }
 }

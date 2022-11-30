@@ -26,7 +26,7 @@
 //! a gap, but often extending a gap is penalized less than the initial
 //! opening of the gap: https://en.wikipedia.org/wiki/Smith%E2%80%93Waterman_algorithm#Gap_penalty
 
-use super::{Align, Alignment, Scoring, Step};
+use super::{PWAlign, PWAlignment, Scoring, Step};
 
 struct Aligner<'a> {
     grid: Vec<Vec<Step>>,
@@ -35,13 +35,13 @@ struct Aligner<'a> {
     scoring: Scoring,
 }
 
-impl<'a> Align for Aligner<'a> {
-    fn align(&mut self) -> Alignment {
+impl<'a> PWAlign for Aligner<'a> {
+    fn align(&mut self) -> PWAlignment {
         self.init();
         self.fill();
         let (a, b) = self.backtrace();
 
-        Alignment {
+        PWAlignment {
             grid: self.grid.clone(),
             a,
             b,
@@ -90,30 +90,34 @@ impl<'a> Aligner<'a> {
                     next: None,
                 }];
 
-                // if gap_extension is less expensive than gap_opening
-                let mut k = 0;
+                // gaps
+                let mut k = 1;
                 while k < i {
-                    opts.push(Step {
-                        val: self.grid[k][j].val
-                            + self.scoring.gap_opening
-                            + self.scoring.gap_extension * (i - k - 1) as i32,
-                        i,
-                        j,
-                        next: Some((k, j)),
-                    });
+                    if a[j - 1] == b[k - 1] {
+                        opts.push(Step {
+                            val: self.grid[k][j].val
+                                + self.scoring.gap_opening
+                                + self.scoring.gap_extension * (i - k - 1) as i32,
+                            i,
+                            j,
+                            next: Some((k, j)),
+                        });
+                    }
                     k += 1;
                 }
 
-                let mut l = 0;
+                let mut l = 1;
                 while l < j {
-                    opts.push(Step {
-                        val: self.grid[i][l].val
-                            + self.scoring.gap_opening
-                            + self.scoring.gap_extension * (j - l - 1) as i32,
-                        i,
-                        j,
-                        next: Some((i, l)),
-                    });
+                    if a[l - 1] == b[i - 1] {
+                        opts.push(Step {
+                            val: self.grid[i][l].val
+                                + self.scoring.gap_opening
+                                + self.scoring.gap_extension * (j - l - 1) as i32,
+                            i,
+                            j,
+                            next: Some((i, l)),
+                        });
+                    }
                     l += 1;
                 }
 

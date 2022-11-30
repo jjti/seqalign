@@ -33,8 +33,8 @@ impl Record {
         }
     }
 
-    fn empty(&self) -> bool {
-        self.seq.len() == 0
+    fn is_empty(&self) -> bool {
+        self.seq.is_empty()
     }
 
     fn read<R: io::Read>(&mut self, r: &mut Reader<R>) -> io::Result<()> {
@@ -94,7 +94,7 @@ impl<R: io::Read> Iterator for Reader<R> {
         let mut r = Record::new();
 
         match r.read(self) {
-            Ok(()) if r.empty() => None,
+            Ok(()) if r.is_empty() => None,
             Ok(()) => Some(Ok(r)),
             Err(e) => Some(Err(e)),
         }

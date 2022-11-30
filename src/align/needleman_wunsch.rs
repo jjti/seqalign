@@ -8,12 +8,8 @@
 //! particularly when the quality of the global alignment is of the utmost importance.
 //! The algorithm assigns a score to every possible alignment, and the purpose of the
 //! algorithm is to find all possible alignments having the highest score.
-//!
-//! TODO: add support for PAM and BLOSUM similarity matricies:
-//! https://en.wikipedia.org/wiki/Point_accepted_mutation
-//! https://en.wikipedia.org/wiki/BLOSUM
 
-use super::{Align, Alignment, Scoring, Step};
+use super::{PWAlign, PWAlignment, Scoring, Step};
 
 struct Aligner<'a> {
     grid: Vec<Vec<Step>>,
@@ -22,13 +18,13 @@ struct Aligner<'a> {
     scoring: Scoring,
 }
 
-impl<'a> Align for Aligner<'a> {
-    fn align(&mut self) -> Alignment {
+impl<'a> PWAlign for Aligner<'a> {
+    fn align(&mut self) -> PWAlignment {
         self.init();
         self.fill();
         let (a, b) = self.backtrace();
 
-        Alignment {
+        PWAlignment {
             grid: self.grid.to_owned(),
             a,
             b,
