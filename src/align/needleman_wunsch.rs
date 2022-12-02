@@ -11,7 +11,7 @@
 
 use super::{PWAlign, PWAlignment, Scoring, Step};
 
-struct Aligner<'a> {
+pub struct Aligner<'a> {
     grid: Vec<Vec<Step>>,
     a: &'a str,
     b: &'a str,

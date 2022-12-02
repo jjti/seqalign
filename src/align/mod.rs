@@ -2,6 +2,7 @@ use std::fmt::{Debug, Display};
 
 use crate::matrices::Matrix;
 
+pub mod clustal_w;
 pub mod needleman_wunsch;
 pub mod smith_waterman;
 
@@ -96,13 +97,13 @@ impl PWAlignment {
 
         let mut residues: f32 = 0.0;
         let mut identities: f32 = 0.0;
-        for (i, c) in self.a.as_bytes().iter().enumerate() {
+        for (i, c1) in self.a.as_bytes().iter().enumerate() {
             let c2 = b[i];
-            if *c == b'-' || c2 == b'-' {
+            if *c1 == b'-' || c2 == b'-' {
                 continue;
             }
             residues += 1.0;
-            if *c == c2 {
+            if *c1 == c2 {
                 identities += 1.0;
             }
         }
