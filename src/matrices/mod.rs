@@ -1,9 +1,7 @@
-use std::collections::HashMap;
-
 /// Matrix is a single alignment matrix used in scoring an alignment.
 ///
 /// Maps a char to another char and the corresponding substitution penalty.
-pub type Matrix = HashMap<u8, HashMap<u8, i32>>;
+pub type Matrix = [[i32; 128]; 128];
 
 /// All the modules beneath here were auto-generated.
 #[allow(non_snake_case)]

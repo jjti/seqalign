@@ -122,13 +122,7 @@ impl<'a> Aligner<'a> {
                 }
 
                 // match or mismatch
-                let match_val = self
-                    .scoring
-                    .replacement
-                    .get(&a[j - 1])
-                    .unwrap()
-                    .get(&b[i - 1])
-                    .unwrap();
+                let match_val = self.scoring.replacement[a[j - 1] as usize][b[i - 1] as usize];
                 opts.push(Step {
                     val: self.grid[i - 1][j - 1].val + match_val,
                     i,
@@ -206,7 +200,7 @@ mod tests {
             "GTT",
             "GAT",
             Scoring {
-                replacement: NUC_4_4::MATRIX.clone(),
+                replacement: NUC_4_4::MATRIX,
                 gap_opening: -2,
                 gap_extension: -2,
             },
@@ -226,7 +220,7 @@ mod tests {
             "TGTTACGG",
             "GGTTGACTA",
             Scoring {
-                replacement: NUC_4_4::MATRIX.clone(),
+                replacement: NUC_4_4::MATRIX,
                 gap_opening: -2,
                 gap_extension: -2,
             },
@@ -247,7 +241,7 @@ mod tests {
             "TACGGGCCCGCTAC",
             "TAGCCCTATCGGTCA",
             Scoring {
-                replacement: NUC_4_4::MATRIX.clone(),
+                replacement: NUC_4_4::MATRIX,
                 gap_opening: -1,
                 gap_extension: -1,
             },
@@ -268,7 +262,7 @@ mod tests {
             "TACGGGCCCGCTAC",
             "TAGCCCTATCGGTCA",
             Scoring {
-                replacement: NUC_4_4::MATRIX.clone(),
+                replacement: NUC_4_4::MATRIX,
                 gap_opening: -5,
                 gap_extension: -1,
             },

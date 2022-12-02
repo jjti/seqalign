@@ -18,7 +18,7 @@ fn clustal_w(seqs: &Vec<String>) {
                 seqs.get(i).unwrap(),
                 seqs.get(j).unwrap(),
                 super::Scoring {
-                    replacement: BLOSUM62::MATRIX.clone(),
+                    replacement: BLOSUM62::MATRIX,
                     gap_opening: -2,
                     gap_extension: -1,
                 },

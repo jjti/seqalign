@@ -5,18 +5,16 @@ import os
 import subprocess
 from typing import Dict, List
 
-d = pathlib.Path(__file__).parent.resolve()
+d = pathlib.Path(__file__).parent.parent.resolve() / "src/matrices"
 
 
 mod = open(d.joinpath("mod.rs"), "w")
 mod.write(
     """
-use std::collections::HashMap;
-
 /// Matrix is a single alignment matrix used in scoring an alignment.
 ///
 /// Maps a char to another char and the corresponding substitution penalty.
-pub type Matrix = HashMap<u8, HashMap<u8, i32>>;
+pub type Matrix = [[i32; 128]; 128];
 
 /// All the modules beneath here were auto-generated.
 """
@@ -37,7 +35,7 @@ for dirpath, _, filenames in os.walk(d):
         print(f"parsing {src.name} to {dst_filename}")
 
         # parse src
-        matrix: Dict[int, Dict[int, int]] = {}
+        matrix: Dict[int, Dict[int, int]] = {c: {} for c in range(128)}
         chars: List[int] = []
         for l in open(src).readlines():
             if l.startswith("#"):
@@ -66,19 +64,21 @@ for dirpath, _, filenames in os.walk(d):
         f.write(
             """
 use super::Matrix;
-use std::collections::HashMap;
 
-lazy_static! {
-    pub static ref MATRIX: Matrix = HashMap::from([
+pub static MATRIX: Matrix = [
     """
         )
-        for left, r in matrix.items():
-            f.write(f"({left}, HashMap::from([")
-            for k, v in r.items():
-                f.write(f"({k},{v}),")
-            f.write("])),\n")
+        for i in range(128):
+            f.write("[")
+            for j in range(128):
+                f.write(
+                    f"{matrix[i][j] if i in matrix and j in matrix[i] else 'i32::MIN'}"
+                )
+                if j < 127:
+                    f.write(",")
+            f.write("],\n")
 
-        f.write("]); }")
+        f.write("];")
         f.close()
 
         mod.write(f"#[allow(non_snake_case)] pub mod {dst_filename};\n")
