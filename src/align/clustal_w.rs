@@ -5,16 +5,18 @@
 //! https://en.wikipedia.org/wiki/UPGMA
 use crate::matrices::BLOSUM62;
 
-use super::{needleman_wunsch::Aligner, PWAlign, PWAlignment};
+use super::{needleman_wunsch::Aligner, PWAlign};
 
-fn clustal_w(seqs: &Vec<String>) {
-    // create a matrix of initial pairwise alignments
-    let mut alignments: Vec<Vec<PWAlignment>> = Vec::new();
+fn clustal_w(seqs: &Vec<String>) {}
+
+fn upgma(seqs: &Vec<String>) {
+    // create initial matrix of initial pairwise alignments
+    let mut distances: Vec<Vec<f32>> = Vec::new();
     for i in 0..seqs.len() {
-        alignments.push(Vec::new());
+        distances.push(Vec::new());
 
         for j in 0..i {
-            alignments[i][j] = Aligner::new(
+            distances[i][j] = Aligner::new(
                 seqs.get(i).unwrap(),
                 seqs.get(j).unwrap(),
                 super::Scoring {
@@ -23,18 +25,38 @@ fn clustal_w(seqs: &Vec<String>) {
                     gap_extension: -1,
                 },
             )
-            .align();
+            .align()
+            .distance();
         }
     }
 
-    // create a distance matrix between each seq in the pairwise alignment
-    // let mut distances: Vec<Vec<i32>> = Vec::new();
-    // let mut min_pair: (usize, usize) = (0, 0);
-    // for i in 0..alignments.len() {
-    //     for j in 0..i {
-    //         if alignments[i][j].distance() < alignments[min_pair.0][min_pair.1].distance() {
-    //             min_val = alignments[i][j].distance();
-    //         }
-    //     }
-    // }
+    // start iterating over the matrix, finding, clustering the best pairs
+    // a Cluster is a tuple of Node = (Node | String, Node | String)
+    // distance is maintained in the distances matrix
+    // while there are still distances in the matrix
+    let clusters: Vec<Node> = Vec::new();
+    while distances.len() > 2 {
+        // find the minimum distance pair
+        let mut min_pair: (usize, usize) = (0, 0);
+        for i in 0..seqs.len() {
+            for j in 0..1 {
+                if distances[i][j] < distances[min_pair.0][min_pair.1] {
+                    min_pair = (i, j);
+                }
+            }
+        }
+
+        //
+    }
+}
+
+// Box::new(Nil)
+struct Node {
+    left_seq: Option<String>,
+    left_node: Box<Node>,
+    left_distance: f32,
+
+    right_seq: Option<String>,
+    right_node: Box<Node>,
+    right_distance: f32,
 }
