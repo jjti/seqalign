@@ -1,5 +1,7 @@
 use std::fmt::{Debug, Display};
 
+use ordered_float::OrderedFloat;
+
 use crate::matrices::Matrix;
 
 pub mod clustal_w;
@@ -13,16 +15,16 @@ pub trait PWAlign {
 /// Step is a single step through an alignment.
 #[derive(Clone, Eq)]
 pub struct Step {
-    val: i32,
+    val: OrderedFloat<f32>,
     i: usize,
     j: usize,
     next: Option<(usize, usize)>,
 }
 
 impl Step {
-    fn from(i: usize, j: usize, val: i32) -> Self {
+    fn from(i: usize, j: usize, val: f32) -> Self {
         Step {
-            val,
+            val: OrderedFloat(val),
             i,
             j,
             next: None,
@@ -33,7 +35,7 @@ impl Step {
 impl Default for Step {
     fn default() -> Self {
         Step {
-            val: i32::MIN,
+            val: OrderedFloat(f32::MIN),
             i: usize::MIN,
             j: usize::MIN,
             next: None,
@@ -80,11 +82,12 @@ pub struct PWAlignment {
 
     /// b_orig is the bottom input sequence
     b_orig: String,
+
+    // score is the final alignment score
+    score: f32,
 }
 
 impl PWAlignment {
-    /// distance calculates the pairwise distance between two sequences.
-    ///
     /// Described in https://www.ncbi.nlm.nih.gov/pmc/articles/PMC308517/pdf/nar00046-0131.pdf
     ///
     /// These scores are calculated as the number of identities in the best alignment divided
@@ -99,14 +102,16 @@ impl PWAlignment {
         let mut identities: f32 = 0.0;
         for (i, c1) in self.a.as_bytes().iter().enumerate() {
             let c2 = b[i];
-            if *c1 == b'-' || c2 == b'-' {
+            if *c1 == b'-' && c2 == b'-' {
+                // skip total gaps
                 continue;
             }
-            residues += 1.0;
+            residues += 2.0;
             if *c1 == c2 {
-                identities += 1.0;
+                identities += 2.0;
             }
         }
+
         (residues - identities) / residues
     }
 }
@@ -160,10 +165,10 @@ pub struct Scoring {
     replacement: Matrix,
 
     /// penalty for a gap opening
-    gap_opening: i32,
+    gap_opening: f32,
 
     /// penalty for a gap extension
-    gap_extension: i32,
+    gap_extension: f32,
 }
 
 #[cfg(test)]
@@ -175,28 +180,29 @@ mod tests {
         let a = PWAlignment {
             grid: vec![
                 vec![
-                    Step::from(0, 0, 0),
-                    Step::from(0, 1, -1),
-                    Step::from(0, 2, -2),
-                    Step::from(0, 3, -3),
+                    Step::from(0, 0, 0f32),
+                    Step::from(0, 1, -1f32),
+                    Step::from(0, 2, -2f32),
+                    Step::from(0, 3, -3f32),
                 ],
                 vec![
-                    Step::from(1, 0, -1),
-                    Step::from(1, 1, 0),
-                    Step::from(1, 2, 0),
-                    Step::from(1, 3, 1),
+                    Step::from(1, 0, -1f32),
+                    Step::from(1, 1, 0f32),
+                    Step::from(1, 2, 0f32),
+                    Step::from(1, 3, 1f32),
                 ],
                 vec![
-                    Step::from(2, 0, -2),
-                    Step::from(2, 1, 0),
-                    Step::from(2, 2, 1),
-                    Step::from(2, 3, 1),
+                    Step::from(2, 0, -2f32),
+                    Step::from(2, 1, 0f32),
+                    Step::from(2, 2, 1f32),
+                    Step::from(2, 3, 1f32),
                 ],
             ],
             a: "AGC".to_string(),
             b: "CG".to_string(),
             a_orig: "AGC".to_string(),
             b_orig: "CG".to_string(),
+            score: 0f32,
         };
 
         assert_eq!(
@@ -219,8 +225,24 @@ G  | -2 | 0  | 1  | 1  |
             b: "AG-CT".to_string(),
             a_orig: "".to_string(),
             b_orig: "".to_string(),
+            score: 0f32,
         };
 
         assert_eq!(0.5, a.distance())
+    }
+
+    /// Test the PWAlignment::distance() function.
+    #[test]
+    fn test_alignment_distance2() {
+        let a = PWAlignment {
+            grid: Vec::new(),
+            a: "ACTGT".to_string(),
+            b: "ACAGT".to_string(),
+            a_orig: "".to_string(),
+            b_orig: "".to_string(),
+            score: 0f32,
+        };
+
+        assert_eq!(0.2, a.distance())
     }
 }

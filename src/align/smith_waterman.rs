@@ -26,6 +26,8 @@
 //! a gap, but often extending a gap is penalized less than the initial
 //! opening of the gap: https://en.wikipedia.org/wiki/Smith%E2%80%93Waterman_algorithm#Gap_penalty
 
+use ordered_float::OrderedFloat;
+
 use super::{PWAlign, PWAlignment, Scoring, Step};
 
 struct Aligner<'a> {
@@ -39,7 +41,7 @@ impl<'a> PWAlign for Aligner<'a> {
     fn align(&mut self) -> PWAlignment {
         self.init();
         self.fill();
-        let (a, b) = self.backtrace();
+        let (a, b, score) = self.backtrace();
 
         PWAlignment {
             grid: self.grid.clone(),
@@ -47,6 +49,7 @@ impl<'a> PWAlign for Aligner<'a> {
             b,
             a_orig: self.a.to_string(),
             b_orig: self.b.to_string(),
+            score,
         }
     }
 }
@@ -68,11 +71,11 @@ impl<'a> Aligner<'a> {
         }
 
         for i in 0..=self.b.len() {
-            self.grid[i][0] = Step::from(i, 0, 0);
+            self.grid[i][0] = Step::from(i, 0, 0f32);
         }
 
         for j in 0..=self.a.len() {
-            self.grid[0][j] = Step::from(0, j, 0);
+            self.grid[0][j] = Step::from(0, j, 0f32);
         }
     }
 
@@ -84,7 +87,7 @@ impl<'a> Aligner<'a> {
             for j in 1..=a.len() {
                 // negative values are ignored, 0 is as low as we'll go
                 let mut opts: Vec<Step> = vec![Step {
-                    val: 0,
+                    val: OrderedFloat(0f32),
                     i,
                     j,
                     next: None,
@@ -97,7 +100,7 @@ impl<'a> Aligner<'a> {
                         opts.push(Step {
                             val: self.grid[k][j].val
                                 + self.scoring.gap_opening
-                                + self.scoring.gap_extension * (i - k - 1) as i32,
+                                + self.scoring.gap_extension * (i - k - 1) as f32,
                             i,
                             j,
                             next: Some((k, j)),
@@ -112,7 +115,7 @@ impl<'a> Aligner<'a> {
                         opts.push(Step {
                             val: self.grid[i][l].val
                                 + self.scoring.gap_opening
-                                + self.scoring.gap_extension * (j - l - 1) as i32,
+                                + self.scoring.gap_extension * (j - l - 1) as f32,
                             i,
                             j,
                             next: Some((i, l)),
@@ -122,7 +125,8 @@ impl<'a> Aligner<'a> {
                 }
 
                 // match or mismatch
-                let match_val = self.scoring.replacement[a[j - 1] as usize][b[i - 1] as usize];
+                let match_val =
+                    self.scoring.replacement[a[j - 1] as usize][b[i - 1] as usize] as f32;
                 opts.push(Step {
                     val: self.grid[i - 1][j - 1].val + match_val,
                     i,
@@ -135,7 +139,7 @@ impl<'a> Aligner<'a> {
         }
     }
 
-    fn backtrace(&self) -> (String, String) {
+    fn backtrace(&self) -> (String, String, f32) {
         // this finds the global maximum among the alignments
         let mut step = &Step::default();
         for i in 0..self.grid.len() {
@@ -145,6 +149,7 @@ impl<'a> Aligner<'a> {
                 }
             }
         }
+        let score = step.val.0;
 
         let a = self.a.as_bytes();
         let b = self.b.as_bytes();
@@ -185,7 +190,7 @@ impl<'a> Aligner<'a> {
 
         let top: String = a_row.iter().rev().map(|c| *c as char).collect();
         let bottom: String = b_row.iter().rev().map(|c| *c as char).collect();
-        (top, bottom)
+        (top, bottom, score)
     }
 }
 
@@ -201,8 +206,8 @@ mod tests {
             "GAT",
             Scoring {
                 replacement: NUC_4_4::MATRIX,
-                gap_opening: -2,
-                gap_extension: -2,
+                gap_opening: -2f32,
+                gap_extension: -2f32,
             },
         );
         let alignment = a.align();
@@ -221,8 +226,8 @@ mod tests {
             "GGTTGACTA",
             Scoring {
                 replacement: NUC_4_4::MATRIX,
-                gap_opening: -2,
-                gap_extension: -2,
+                gap_opening: -2f32,
+                gap_extension: -2f32,
             },
         );
         let alignment = a.align();
@@ -242,8 +247,8 @@ mod tests {
             "TAGCCCTATCGGTCA",
             Scoring {
                 replacement: NUC_4_4::MATRIX,
-                gap_opening: -1,
-                gap_extension: -1,
+                gap_opening: -1f32,
+                gap_extension: -1f32,
             },
         );
         let alignment = a.align();
@@ -263,8 +268,8 @@ mod tests {
             "TAGCCCTATCGGTCA",
             Scoring {
                 replacement: NUC_4_4::MATRIX,
-                gap_opening: -5,
-                gap_extension: -1,
+                gap_opening: -5f32,
+                gap_extension: -1f32,
             },
         );
         let alignment = a.align();

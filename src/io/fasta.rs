@@ -21,7 +21,7 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 pub struct Record {
     id: String,
     desc: Option<String>,
-    seq: String,
+    pub seq: String,
 }
 
 impl Record {
@@ -129,6 +129,26 @@ ATIGENLVVRRFATLKAGANG"
         assert_eq!("SEQUENCE_2", second.id);
         assert_eq!(
             "SATVSEINSETDFVAKNDQFIALTKDTTAHIQSNSLQSVEELHSSTINGVKFEEYLKSQIATIGENLVVRRFATLKAGANG",
+            second.seq
+        );
+    }
+
+    #[test]
+    fn test_reader_fasta_file() {
+        let mut r =
+            Reader::new(std::fs::File::open("./tests/data/reper.pep").expect("can't open file"));
+
+        let first = r.next().unwrap().unwrap();
+        assert_eq!("dica_ecoli", first.id);
+        assert_eq!(
+            "METKNLTIGERIRYRRKNLKHTQRSLAKALKISHVSVSQWERGDSEPTGKNLFALSKVLQCSPTWILFGDEDKQPTPPVEKPVALSPKELELLELFNALPESEQDTQLAEMRARVKNFNKLFEELLKARQRTNKR",
+            first.seq
+        );
+
+        let second = r.next().unwrap().unwrap();
+        assert_eq!("immf_bpph1", second.id);
+        assert_eq!(
+            "LDGKKLGALIKDKRKEKHLKQTEMAKALGMSRTYLSDIENGRYLPSTKTLSRIAILINLDLNVLKMTEIQVVEEGGYDRAAGTCRRQAL",
             second.seq
         );
     }
