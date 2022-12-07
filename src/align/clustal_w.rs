@@ -6,7 +6,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use super::{needleman_wunsch::Aligner, PWAlign};
+use super::{needleman_wunsch::Aligner, Align};
 use crate::matrices::BLOSUM62;
 
 type Distances = HashMap<(usize, usize), f32>;
@@ -64,8 +64,6 @@ impl Node {
 ///  - Take the cluster in distances with the minimum value
 ///  - Merge the two clusters in that pair
 ///  - Remove the pair from distances
-///
-/// Return: the order of traversal.
 fn upgma(seqs: &mut [String]) -> Vec<Node> {
     let mut clusters: Vec<Node> = seqs
         .iter()
@@ -76,20 +74,16 @@ fn upgma(seqs: &mut [String]) -> Vec<Node> {
 
     // Initialize distances
     let mut distances: Distances = HashMap::new();
+    let aligner = Aligner::new(super::Scoring {
+        replacement: BLOSUM62::MATRIX,
+        gap_opening: -1f32,
+        gap_extension: -0.5f32,
+    });
     for i in 0..clusters.len() {
         for j in i + 1..clusters.len() {
-            let alignment = Aligner::new(
-                seqs[i].as_str(),
-                seqs[j].as_str(),
-                super::Scoring {
-                    replacement: BLOSUM62::MATRIX,
-                    gap_opening: -1f32,
-                    gap_extension: -0.5f32,
-                },
-            )
-            .align();
+            let alignment = aligner.align(vec![seqs[i].clone(), seqs[j].clone()]);
 
-            distances.insert((i, j), alignment.distance());
+            distances.insert((i, j), alignment.distance);
         }
     }
 
@@ -173,6 +167,6 @@ mod test {
             "ACATA".to_string(),
         ]);
 
-        assert_eq!(6, clusters.len())
+        assert_eq!(7, clusters.len())
     }
 }

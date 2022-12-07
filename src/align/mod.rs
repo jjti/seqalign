@@ -1,18 +1,19 @@
-use std::fmt::{Debug, Display};
-
-use ordered_float::OrderedFloat;
-
 use crate::matrices::Matrix;
+use ordered_float::OrderedFloat;
+use std::{
+    collections::HashSet,
+    fmt::{Debug, Display},
+};
 
 pub mod clustal_w;
 pub mod needleman_wunsch;
 pub mod smith_waterman;
 
-pub trait PWAlign {
-    fn align(&mut self) -> PWAlignment;
+pub trait Align {
+    fn align<I: IntoIterator<Item = String>>(&self, seqs: I) -> Alignment;
 }
 
-/// Step is a single step through an alignment.
+/// Step is a single step through a pairwise alignment.
 #[derive(Clone, Eq)]
 pub struct Step {
     val: OrderedFloat<f32>,
@@ -67,58 +68,76 @@ impl PartialOrd for Step {
     }
 }
 
-pub struct PWAlignment {
-    /// grid holds the alignment of the two sequences
-    grid: Vec<Vec<Step>>,
+pub struct Alignment {
+    /// the 2D-grid holding the alignment of the sequences.
+    rows: Vec<Vec<char>>,
 
-    /// a is the top sequence of the alignment
-    a: String,
+    /// steps are the steps from the full 2D alignment.
+    steps: Vec<Vec<Step>>,
 
-    /// b is the bottom sequence of the alignment
-    b: String,
-
-    /// a_orig is the original top input sequence
-    a_orig: String,
-
-    /// b_orig is the bottom input sequence
-    b_orig: String,
-
-    // score is the final alignment score
+    /// score is the final alignment score.
     score: f32,
+
+    /// distance is the ratio of characters that differ between the two sequences.
+    distance: f32,
 }
 
-impl PWAlignment {
-    /// Described in https://www.ncbi.nlm.nih.gov/pmc/articles/PMC308517/pdf/nar00046-0131.pdf
-    ///
-    /// These scores are calculated as the number of identities in the best alignment divided
-    /// by the number of residues compared (gap positions are excluded).
-    /// Both of these scores are initially calculated as per cent identity
-    /// scores and are converted to distances by dividing by 100 and
-    /// subtracting from 1.0 to give number of differences per site.
-    fn distance(&self) -> f32 {
-        let b = self.b.as_bytes();
-
-        let mut residues: f32 = 0.0;
-        let mut identities: f32 = 0.0;
-        for (i, c1) in self.a.as_bytes().iter().enumerate() {
-            let c2 = b[i];
-            if *c1 == b'-' && c2 == b'-' {
-                // skip total gaps
-                continue;
-            }
-            residues += 2.0;
-            if *c1 == c2 {
-                identities += 2.0;
-            }
+impl Alignment {
+    pub fn new(alignment: Vec<Vec<char>>, steps: Vec<Vec<Step>>, score: f32) -> Self {
+        if alignment.len() < 2 {
+            panic!("Alignment must have at least one row")
         }
 
-        (residues - identities) / residues
+        let distance = Alignment::calc_distance(&alignment);
+
+        Alignment {
+            rows: alignment,
+            steps,
+            score,
+            distance,
+        }
+    }
+
+    /// returns the ratio of residues that have a difference between the
+    /// sequences in the alignment. Residues that are entirely gap are ignored.
+    fn calc_distance(alignment: &Vec<Vec<char>>) -> f32 {
+        let mut residues = 0f32;
+        let mut diffs = 0f32;
+        for col in 0..alignment[0].len() {
+            let chars = (0..alignment.len())
+                .map(|i| {
+                    if col < alignment[i].len() {
+                        alignment[i][col]
+                    } else {
+                        '-'
+                    }
+                })
+                .collect::<HashSet<_>>();
+            if chars.len() == 1 {
+                if chars.contains(&'-') {
+                    continue; // it's all gap, skip
+                }
+            } else {
+                diffs += 1f32;
+            }
+            residues += 1f32;
+        }
+
+        diffs / residues
     }
 }
 
-impl Display for PWAlignment {
+impl Display for Alignment {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}\n{}", self.a, self.b)
+        write!(
+            f,
+            "{}",
+            self.rows
+                .iter()
+                .map(|a| a.iter().collect::<String>())
+                .collect::<Vec<_>>()
+                .join("\n")
+        )
     }
 }
 
@@ -126,18 +145,35 @@ impl Display for PWAlignment {
 // https://doc.rust-lang.org/std/fmt/index.html#formatting-traits
 //
 // fmt::Debug implementations should be implemented for all public types.
-impl Debug for PWAlignment {
+impl Debug for Alignment {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let header = format!("{}\n{}\n", self.a, self.b);
+        if self.rows.len() < 2 {
+            panic!("Alignment must have at least two rows")
+        }
+
+        let header = format!(
+            "{}\n{}\n",
+            self.rows[0].iter().collect::<String>(),
+            self.rows[1].iter().collect::<String>()
+        );
         let mut result: Vec<String> = vec![header];
 
-        for i in 0..self.b_orig.len() + 1 {
+        let a: Vec<char> = self.rows[0]
+            .clone()
+            .into_iter()
+            .filter(|c| *c != '-')
+            .collect();
+        let b: Vec<char> = self.rows[1]
+            .clone()
+            .into_iter()
+            .filter(|c| *c != '-')
+            .collect();
+
+        for i in 0..b.len() + 1 {
             // Write seq A header row.
             if i == 0 {
                 result.push("   |    |".to_string());
-                self.a_orig
-                    .chars()
-                    .for_each(|c| result.push(format!(" {: <3}|", c)));
+                a.iter().for_each(|c| result.push(format!(" {: <3}|", c)));
                 result.push("\n".to_string());
             }
 
@@ -145,11 +181,11 @@ impl Debug for PWAlignment {
             if i == 0 {
                 result.push("   |".to_string());
             } else {
-                result.push(format!("{: <3}|", self.b_orig.chars().nth(i - 1).unwrap()));
+                result.push(format!("{: <3}|", b[i - 1]));
             }
 
             // Write each character of the grid.
-            self.grid[i]
+            self.steps[i]
                 .iter()
                 .for_each(|f| result.push(format!(" {: <3}|", f.val)));
             result.push("\n".to_string());
@@ -177,8 +213,9 @@ mod tests {
 
     #[test]
     fn test_alignment_debug() {
-        let a = PWAlignment {
-            grid: vec![
+        let alignment = Alignment::new(
+            vec![vec!['A', 'G', 'C'], vec!['C', 'G']],
+            vec![
                 vec![
                     Step::from(0, 0, 0f32),
                     Step::from(0, 1, -1f32),
@@ -198,12 +235,8 @@ mod tests {
                     Step::from(2, 3, 1f32),
                 ],
             ],
-            a: "AGC".to_string(),
-            b: "CG".to_string(),
-            a_orig: "AGC".to_string(),
-            b_orig: "CG".to_string(),
-            score: 0f32,
-        };
+            0f32,
+        );
 
         assert_eq!(
             "AGC
@@ -213,36 +246,18 @@ CG
 C  | -1 | 0  | 0  | 1  |
 G  | -2 | 0  | 1  | 1  |
 ",
-            format!("{:?}", a)
+            format!("{:?}", alignment)
         )
     }
 
     #[test]
     fn test_alignment_distance() {
-        let a = PWAlignment {
-            grid: Vec::new(),
-            a: "ACCGT".to_string(),
-            b: "AG-CT".to_string(),
-            a_orig: "".to_string(),
-            b_orig: "".to_string(),
-            score: 0f32,
-        };
+        let alignment = Alignment::new(
+            vec![vec!['A', 'C', 'C', 'G', 'T'], vec!['A', 'G', '-', 'C', 'T']],
+            vec![vec![]],
+            0f32,
+        );
 
-        assert_eq!(0.5, a.distance())
-    }
-
-    /// Test the PWAlignment::distance() function.
-    #[test]
-    fn test_alignment_distance2() {
-        let a = PWAlignment {
-            grid: Vec::new(),
-            a: "ACTGT".to_string(),
-            b: "ACAGT".to_string(),
-            a_orig: "".to_string(),
-            b_orig: "".to_string(),
-            score: 0f32,
-        };
-
-        assert_eq!(0.2, a.distance())
+        assert_eq!(0.6, alignment.distance)
     }
 }
