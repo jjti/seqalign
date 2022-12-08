@@ -6,7 +6,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use super::{needleman_wunsch::Aligner, Align};
+use super::{needleman_wunsch::NeedlemanWunsch, Aligner, Alignment};
 use crate::matrices::BLOSUM62;
 
 type Distances = HashMap<(usize, usize), f32>;
@@ -74,7 +74,7 @@ fn upgma(seqs: &mut [String]) -> Vec<Node> {
 
     // Initialize distances
     let mut distances: Distances = HashMap::new();
-    let aligner = Aligner::new(super::Scoring {
+    let aligner = NeedlemanWunsch::new(super::Scoring {
         replacement: BLOSUM62::MATRIX,
         gap_opening: -1f32,
         gap_extension: -0.5f32,
@@ -152,6 +152,63 @@ fn new_distances(
     }
 
     distances_new
+}
+
+impl Alignment {
+    // align combines this alignment with another one. Gaps are preserved.
+    //
+    // This matches the process described in https://www.ncbi.nlm.nih.gov/pmc/articles/PMC308517/pdf/nar00046-0131.pdf
+    // fn align(&self, other: Alignment) -> Alignment {
+    //     let mut alignment = Alignment {
+    //         seqs: vec![self.seqs[0].clone(), other.seqs[0].clone()],
+    //         distance: 0f32,
+    //     };
+
+    //     for i in 0..self.seqs[0].len() {
+    //         if self.seqs[0][i] == other.seqs[0][i] {
+    //             alignment.seqs[0].push(self.seqs[0][i]);
+    //             alignment.seqs[1].push(other.seqs[0][i]);
+    //         } else {
+    //             alignment.seqs[0].push('-');
+    //             alignment.seqs[1].push('-');
+    //             alignment.distance += 1f32;
+    //         }
+    //     }
+
+    //     alignment
+    // }
+
+    // /// init_grid creates a new 2D alignment grid with negatives values for each initial row.
+    // fn init_grid(&self, a_len: usize, b_len: usize) -> Vec<Vec<Step>> {
+    //     let mut grid: Vec<Vec<Step>> = Vec::new();
+    //     for i in 0..b_len + 1 {
+    //         grid.push(vec![Step::default(); a_len + 1]);
+
+    //         grid[i][0] = Step {
+    //             i,
+    //             j: 0,
+    //             val: OrderedFloat(-(i as f32)),
+    //             next: match i {
+    //                 0 => None,
+    //                 _ => Some((i - 1, 0)),
+    //             },
+    //         };
+    //     }
+
+    //     for j in 0..a_len + 1 {
+    //         grid[0][j] = Step {
+    //             i: 0,
+    //             j,
+    //             val: OrderedFloat(-(j as f32)),
+    //             next: match j {
+    //                 0 => None,
+    //                 _ => Some((0, j - 1)),
+    //             },
+    //         };
+    //     }
+
+    //     grid
+    // }
 }
 
 #[cfg(test)]

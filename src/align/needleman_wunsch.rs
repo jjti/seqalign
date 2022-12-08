@@ -11,68 +11,34 @@
 
 use ordered_float::OrderedFloat;
 
-use super::{Align, Alignment, Scoring, Step};
+use super::{Aligner, Alignment, Scoring, Step};
 
 /// A Needleman-Wunsch sequence aligner.
-pub struct Aligner {
+pub struct NeedlemanWunsch {
     scoring: Scoring,
 }
 
-impl Align for Aligner {
-    fn align<I: IntoIterator<Item = String>>(&self, seqs: I) -> Alignment {
-        let mut input = seqs.into_iter();
-        let a = input.next().unwrap();
-        let b = input.next().unwrap();
+impl Aligner for NeedlemanWunsch {
+    fn scoring(&self) -> &Scoring {
+        &self.scoring
+    }
 
-        // Initialize the alignment grid.
-        let grid = &mut self.init_grid(a.len(), b.len());
+    fn default_grid_value(&self, index: usize) -> OrderedFloat<f32> {
+        OrderedFloat(-(index as f32))
+    }
 
-        // Fill in the alignment grid.
-        self.fill_grid(grid, a.as_bytes(), b.as_bytes());
-
-        // Backtrace the grid to get the final alignment.
-        self.backtrace(grid, a.as_bytes(), b.as_bytes())
+    fn default_step_options(&self, _i: usize, _j: usize) -> Vec<Step> {
+        vec![]
     }
 }
 
-impl Aligner {
-    pub fn new(scoring: Scoring) -> Aligner {
-        Aligner { scoring }
+impl NeedlemanWunsch {
+    pub fn new(scoring: Scoring) -> NeedlemanWunsch {
+        NeedlemanWunsch { scoring }
     }
 
-    /// init_grid creates a new 2D alignment grid with negatives values for each initial row.
-    fn init_grid(&self, a_len: usize, b_len: usize) -> Vec<Vec<Step>> {
-        let mut grid: Vec<Vec<Step>> = Vec::new();
-        for i in 0..b_len + 1 {
-            grid.push(vec![Step::default(); a_len + 1]);
-
-            grid[i][0] = Step {
-                i,
-                j: 0,
-                val: OrderedFloat(-(i as f32)),
-                next: match i {
-                    0 => None,
-                    _ => Some((i - 1, 0)),
-                },
-            };
-        }
-
-        for j in 0..a_len + 1 {
-            grid[0][j] = Step {
-                i: 0,
-                j,
-                val: OrderedFloat(-(j as f32)),
-                next: match j {
-                    0 => None,
-                    _ => Some((0, j - 1)),
-                },
-            };
-        }
-
-        grid
-    }
-
-    /// fill_grid in the alignment grid.
+    /// fill_grid fills in the alignment grid from top left to bottom right with
+    /// the best option/step at each index.
     fn fill_grid(&self, grid: &mut [Vec<Step>], a: &[u8], b: &[u8]) {
         for i in 1..b.len() + 1 {
             for j in 1..a.len() + 1 {
@@ -107,7 +73,7 @@ impl Aligner {
         }
     }
 
-    /// backtrace builds up the the final alignment parsing it from the grid.
+    /// backtrace builds up the final alignment parsing it from the grid.
     fn backtrace(&self, grid: &mut [Vec<Step>], a: &[u8], b: &[u8]) -> Alignment {
         let mut alignment: Vec<Vec<char>> = vec![vec![], vec![]];
 
@@ -161,7 +127,7 @@ mod tests {
 
     #[test]
     fn test_aligner_align() {
-        let a = Aligner::new(Scoring {
+        let a = NeedlemanWunsch::new(Scoring {
             replacement: MATCH::MATRIX,
             gap_opening: -1f32,
             gap_extension: -1f32,
