@@ -1,9 +1,8 @@
+use super::Step;
 use std::{
     collections::HashSet,
     fmt::{Debug, Display},
 };
-
-use super::Step;
 
 pub struct Alignment {
     /// the 2D-grid holding the alignment of the sequences.

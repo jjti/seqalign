@@ -224,6 +224,6 @@ mod test {
             "ACATA".to_string(),
         ]);
 
-        assert_eq!(7, clusters.len())
+        assert_eq!(6, clusters.len())
     }
 }

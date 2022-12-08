@@ -1,14 +1,24 @@
+use super::{step::Step, Alignment};
+use crate::matrices::Matrix;
 use ordered_float::OrderedFloat;
 
-use crate::matrices::Matrix;
+#[derive(Debug)]
+pub struct Scoring {
+    /// replacement matrix
+    pub replacement: Matrix,
 
-use super::{step::Step, Alignment};
+    /// penalty for a gap opening
+    pub gap_opening: f32,
+
+    /// penalty for a gap extension
+    pub gap_extension: f32,
+}
 
 pub trait Aligner {
     /// get_scoring returns the alignment scoring to use.
     fn scoring(&self) -> &Scoring;
 
-    /// init_grid_value defines the initial value of a cell in the alignment grid.
+    /// init_grid_value defines the initial value of a cell in the alignment grid along the edge.
     ///
     /// For Needleman-Wunsch, this is a negative value proportional to the index.
     /// For Smith-Waterman, this is 0.
@@ -118,17 +128,23 @@ pub trait Aligner {
         }
     }
 
-    /// backtrace walks to the result of alignment to find the optimal alignment.
-    fn backtrace(&self, grid: &mut Vec<Vec<Step>>, a: &[u8], b: &[u8]) -> Alignment {
+    /// backtrace_start finds the starting point for backtracing.
+    fn backtrace_start(&self, grid: &[Vec<Step>]) -> Step {
         // this finds the global maximum among the alignments
-        let mut step = &Step::default();
+        let mut step = Step::default();
         for i in 0..grid.len() {
             for j in 0..grid[i].len() {
-                if &grid[i][j] > step {
-                    step = &grid[i][j];
+                if grid[i][j] > step {
+                    step = grid[i][j].clone();
                 }
             }
         }
+        step
+    }
+
+    /// backtrace walks to the result of alignment to find the optimal alignment.
+    fn backtrace(&self, grid: &mut Vec<Vec<Step>>, a: &[u8], b: &[u8]) -> Alignment {
+        let mut step = &self.backtrace_start(grid);
         let score = step.val.0;
 
         let mut alignment: Vec<Vec<char>> = vec![Vec::new(), Vec::new()];
@@ -170,16 +186,4 @@ pub trait Aligner {
 
         Alignment::new(alignment, grid.to_vec(), score)
     }
-}
-
-#[derive(Debug)]
-pub struct Scoring {
-    /// replacement matrix
-    pub replacement: Matrix,
-
-    /// penalty for a gap opening
-    pub gap_opening: f32,
-
-    /// penalty for a gap extension
-    pub gap_extension: f32,
 }
