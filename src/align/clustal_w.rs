@@ -6,7 +6,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use super::{needleman_wunsch::NeedlemanWunsch, Aligner, Alignment};
+use super::{aligner::Scoring, needleman_wunsch::NeedlemanWunsch, Aligner, Alignment};
 use crate::matrices::BLOSUM62;
 
 type Distances = HashMap<(usize, usize), f32>;
@@ -74,14 +74,17 @@ fn upgma(seqs: &mut [String]) -> Vec<Node> {
 
     // Initialize distances
     let mut distances: Distances = HashMap::new();
-    let aligner = NeedlemanWunsch::new(super::Scoring {
-        replacement: BLOSUM62::MATRIX,
-        gap_opening: -1f32,
-        gap_extension: -0.5f32,
-    });
+    let aligner = NeedlemanWunsch::new();
     for i in 0..clusters.len() {
         for j in i + 1..clusters.len() {
-            let alignment = aligner.align(vec![seqs[i].clone(), seqs[j].clone()]);
+            let alignment = aligner.align(
+                vec![seqs[i].clone(), seqs[j].clone()],
+                super::Scoring {
+                    replacement: BLOSUM62::MATRIX,
+                    gap_opening: -1f32,
+                    gap_extension: -0.5f32,
+                },
+            );
 
             distances.insert((i, j), alignment.distance);
         }
@@ -224,6 +227,6 @@ mod test {
             "ACATA".to_string(),
         ]);
 
-        assert_eq!(6, clusters.len())
+        assert_eq!(7, clusters.len())
     }
 }

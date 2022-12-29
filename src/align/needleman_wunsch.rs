@@ -9,19 +9,13 @@
 //! The algorithm assigns a score to every possible alignment, and the purpose of the
 //! algorithm is to find all possible alignments having the highest score.
 
-use super::{Aligner, Scoring, Step};
+use super::{Aligner, Step};
 use ordered_float::OrderedFloat;
 
 /// A Needleman-Wunsch sequence aligner.
-pub struct NeedlemanWunsch {
-    scoring: Scoring,
-}
+pub struct NeedlemanWunsch;
 
 impl Aligner for NeedlemanWunsch {
-    fn scoring(&self) -> &Scoring {
-        &self.scoring
-    }
-
     fn default_grid_value(&self, index: usize) -> OrderedFloat<f32> {
         OrderedFloat(-(index as f32))
     }
@@ -37,25 +31,28 @@ impl Aligner for NeedlemanWunsch {
 }
 
 impl NeedlemanWunsch {
-    pub fn new(scoring: Scoring) -> NeedlemanWunsch {
-        NeedlemanWunsch { scoring }
+    pub fn new() -> NeedlemanWunsch {
+        NeedlemanWunsch {}
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::matrices::MATCH;
+    use crate::{align::aligner::Scoring, matrices::MATCH};
 
     use super::*;
 
     #[test]
     fn test_aligner_align() {
-        let a = NeedlemanWunsch::new(Scoring {
-            replacement: MATCH::MATRIX,
-            gap_opening: -1f32,
-            gap_extension: -1f32,
-        });
-        let alignment = a.align(vec!["GCATGCG".to_string(), "GATTACA".to_string()]);
+        let a = NeedlemanWunsch::new();
+        let alignment = a.align(
+            vec!["GCATGCG".to_string(), "GATTACA".to_string()],
+            Scoring {
+                replacement: MATCH::MATRIX,
+                gap_opening: -1f32,
+                gap_extension: -1f32,
+            },
+        );
 
         println!("{:?}", alignment);
 

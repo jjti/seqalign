@@ -15,9 +15,6 @@ pub struct Scoring {
 }
 
 pub trait Aligner {
-    /// get_scoring returns the alignment scoring to use.
-    fn scoring(&self) -> &Scoring;
-
     /// init_grid_value defines the initial value of a cell in the alignment grid along the edge.
     ///
     /// For Needleman-Wunsch, this is a negative value proportional to the index.
@@ -27,7 +24,7 @@ pub trait Aligner {
     /// default_step_options are those that are consistent across each set of options in an alignment.
     fn default_step_options(&self, _i: usize, _j: usize) -> Vec<Step>;
 
-    fn align<I: IntoIterator<Item = String>>(&self, seqs: I) -> Alignment {
+    fn align<I: IntoIterator<Item = String>>(&self, seqs: I, scoring: Scoring) -> Alignment {
         let mut input = seqs.into_iter();
         let a = input.next().unwrap();
         let b = input.next().unwrap();
@@ -36,7 +33,7 @@ pub trait Aligner {
         let grid = &mut self.init_grid(a.len(), b.len());
 
         // Fill in the alignment grid.
-        self.fill_grid(grid, a.as_bytes(), b.as_bytes());
+        self.fill_grid(grid, scoring, a.as_bytes(), b.as_bytes());
 
         // Backtrace the grid to get the final alignment.
         self.backtrace(grid, a.as_bytes(), b.as_bytes())
@@ -75,9 +72,7 @@ pub trait Aligner {
     }
 
     /// fill_grid traverses the grid from top-left to bottom right, filling in each step.
-    fn fill_grid(&self, grid: &mut [Vec<Step>], a: &[u8], b: &[u8]) {
-        let scoring = self.scoring();
-
+    fn fill_grid(&self, grid: &mut [Vec<Step>], scoring: Scoring, a: &[u8], b: &[u8]) {
         for i in 1..=b.len() {
             for j in 1..=a.len() {
                 // negative values are ignored, 0 is as low as we'll go
