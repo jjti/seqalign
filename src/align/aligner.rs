@@ -5,7 +5,7 @@ use ordered_float::OrderedFloat;
 #[derive(Debug)]
 pub struct Scoring {
     /// replacement matrix
-    pub replacement: Matrix,
+    pub matrix: Matrix,
 
     /// penalty for a gap opening
     pub gap_opening: f32,
@@ -110,7 +110,7 @@ pub trait Aligner {
                 }
 
                 // match or mismatch
-                let match_val = scoring.replacement[a[j - 1] as usize][b[i - 1] as usize] as f32;
+                let match_val = scoring.matrix[a[j - 1] as usize][b[i - 1] as usize] as f32;
                 options.push(Step {
                     val: grid[i - 1][j - 1].val + match_val,
                     i,

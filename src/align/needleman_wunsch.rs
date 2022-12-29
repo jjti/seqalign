@@ -15,6 +15,12 @@ use ordered_float::OrderedFloat;
 /// A Needleman-Wunsch sequence aligner.
 pub struct NeedlemanWunsch;
 
+impl NeedlemanWunsch {
+    pub fn new() -> NeedlemanWunsch {
+        NeedlemanWunsch {}
+    }
+}
+
 impl Aligner for NeedlemanWunsch {
     fn default_grid_value(&self, index: usize) -> OrderedFloat<f32> {
         OrderedFloat(-(index as f32))
@@ -30,12 +36,6 @@ impl Aligner for NeedlemanWunsch {
     }
 }
 
-impl NeedlemanWunsch {
-    pub fn new() -> NeedlemanWunsch {
-        NeedlemanWunsch {}
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::{align::aligner::Scoring, matrices::MATCH};
@@ -48,7 +48,7 @@ mod tests {
         let alignment = a.align(
             vec!["GCATGCG".to_string(), "GATTACA".to_string()],
             Scoring {
-                replacement: MATCH::MATRIX,
+                matrix: MATCH::MATRIX,
                 gap_opening: -1f32,
                 gap_extension: -1f32,
             },

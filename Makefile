@@ -1,5 +1,5 @@
-edit:
-	git ls-files -z | xargs -0 nvim +only -o
+build:
+	cargo build --bin seqalign --release
 
 test:
 	cargo test

@@ -30,10 +30,10 @@ use ordered_float::OrderedFloat;
 
 use super::{Aligner, Step};
 
-struct SmithWaterman;
+pub struct SmithWaterman;
 
 impl SmithWaterman {
-    fn new() -> Self {
+    pub fn new() -> Self {
         SmithWaterman {}
     }
 }
@@ -64,7 +64,7 @@ mod tests {
         let alignment = a.align(
             vec!["GTT".to_string(), "GAT".to_string()],
             Scoring {
-                replacement: NUC_4_4::MATRIX,
+                matrix: NUC_4_4::MATRIX,
                 gap_opening: -2f32,
                 gap_extension: -2f32,
             },
@@ -83,7 +83,7 @@ mod tests {
         let alignment = a.align(
             vec!["TGTTACGG".to_string(), "GGTTGACTA".to_string()],
             Scoring {
-                replacement: NUC_4_4::MATRIX,
+                matrix: NUC_4_4::MATRIX,
                 gap_opening: -2f32,
                 gap_extension: -2f32,
             },
@@ -103,7 +103,7 @@ mod tests {
         let alignment = a.align(
             vec!["TACGGGCCCGCTAC".to_string(), "TAGCCCTATCGGTCA".to_string()],
             Scoring {
-                replacement: NUC_4_4::MATRIX,
+                matrix: NUC_4_4::MATRIX,
                 gap_opening: -1f32,
                 gap_extension: -1f32,
             },
@@ -129,7 +129,7 @@ mod tests {
         let alignment = a.align(
             vec!["TAGCCCTATCGGTCA".to_string(), "TACGGGCCCGCTAC".to_string()],
             Scoring {
-                replacement: NUC_4_4::MATRIX,
+                matrix: NUC_4_4::MATRIX,
                 gap_opening: -5f32,
                 gap_extension: -1f32,
             },
