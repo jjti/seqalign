@@ -38,7 +38,7 @@ impl Record {
     }
 
     fn read<R: io::Read>(&mut self, r: &mut Reader<R>) -> io::Result<()> {
-        if r.line_buffer.is_empty() || !r.line_buffer.starts_with(">") {
+        if r.line_buffer.is_empty() || !r.line_buffer.starts_with('>') {
             r.reader.read_line(&mut r.line_buffer)?;
 
             if r.line_buffer.is_empty() {
@@ -53,14 +53,14 @@ impl Record {
             ));
         }
 
-        let mut headers = r.line_buffer[1..].trim_end().splitn(2, " ");
+        let mut headers = r.line_buffer[1..].trim_end().splitn(2, ' ');
         self.id = headers.next().unwrap_or_default().to_string();
         self.desc = headers.next().map(str::to_string);
 
         loop {
             r.line_buffer.clear();
             r.reader.read_line(&mut r.line_buffer)?;
-            if r.line_buffer.is_empty() || r.line_buffer.starts_with(">") {
+            if r.line_buffer.is_empty() || r.line_buffer.starts_with('>') {
                 return Ok(());
             }
 

@@ -9,45 +9,35 @@
 //! The algorithm assigns a score to every possible alignment, and the purpose of the
 //! algorithm is to find all possible alignments having the highest score.
 
-use super::{Aligner, Step};
+use super::{step::Step, strategy::Strategy};
 use ordered_float::OrderedFloat;
 
-/// A Needleman-Wunsch sequence aligner.
-pub struct NeedlemanWunsch;
+/// strategy for the Needleman-Wunsch algorithm.
+pub const STRATEGY: Strategy = Strategy {
+    init_grid_value: |index: usize| -> OrderedFloat<f32> { OrderedFloat(-(index as f32)) },
 
-impl NeedlemanWunsch {
-    pub fn new() -> NeedlemanWunsch {
-        NeedlemanWunsch {}
-    }
-}
+    init_step_options: |_i: usize, _j: usize| -> Vec<Step> { vec![] },
 
-impl Aligner for NeedlemanWunsch {
-    fn default_grid_value(&self, index: usize) -> OrderedFloat<f32> {
-        OrderedFloat(-(index as f32))
-    }
-
-    fn default_step_options(&self, _i: usize, _j: usize) -> Vec<Step> {
-        vec![]
-    }
-
-    /// Needleman-Wunsch is a global alignment, so it starts at the very bottom right.
-    fn backtrace_start(&self, grid: &[Vec<Step>]) -> Step {
+    init_backtrace: |grid: &[Vec<Step>]| -> Step {
         grid[grid.len() - 1][grid[0].len() - 1].clone()
-    }
-}
+    },
+};
 
 #[cfg(test)]
 mod tests {
-    use crate::{align::aligner::Scoring, matrices::MATCH};
+    use crate::{
+        align::{align, Scoring},
+        matrices::MATCH,
+    };
 
     use super::*;
 
     #[test]
     fn test_aligner_align() {
-        let a = NeedlemanWunsch::new();
-        let alignment = a.align(
+        let alignment = align(
             vec!["GCATGCG".to_string(), "GATTACA".to_string()],
-            Scoring {
+            &STRATEGY,
+            &Scoring {
                 matrix: MATCH::MATRIX,
                 gap_opening: -1f32,
                 gap_extension: -1f32,

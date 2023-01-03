@@ -28,42 +28,47 @@
 
 use ordered_float::OrderedFloat;
 
-use super::{Aligner, Step};
+use super::{step::Step, strategy::Strategy};
 
-pub struct SmithWaterman;
+/// strategy for the Smith-Waterman algorithm.
+pub const STRATEGY: Strategy = Strategy {
+    init_grid_value: |_i: usize| -> OrderedFloat<f32> { OrderedFloat(0f32) },
 
-impl SmithWaterman {
-    pub fn new() -> Self {
-        SmithWaterman {}
-    }
-}
-
-impl Aligner for SmithWaterman {
-    fn default_grid_value(&self, _i: usize) -> OrderedFloat<f32> {
-        OrderedFloat(0f32)
-    }
-
-    fn default_step_options(&self, i: usize, j: usize) -> Vec<Step> {
+    init_step_options: |i: usize, j: usize| -> Vec<Step> {
         vec![Step {
             i,
             j,
             val: OrderedFloat(0f32),
             next: None,
         }]
-    }
-}
+    },
+
+    init_backtrace: |grid: &[Vec<Step>]| -> Step {
+        let mut step = grid[0][0].clone();
+        for (i, _) in grid.iter().enumerate() {
+            for j in 0..grid[i].len() {
+                if grid[i][j] > step {
+                    step = grid[i][j].clone();
+                }
+            }
+        }
+        step
+    },
+};
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::{align::aligner::Scoring, matrices::NUC_4_4};
+    use crate::{
+        align::{align, smith_waterman::STRATEGY, Scoring},
+        matrices::NUC_4_4,
+    };
 
     #[test]
     fn test_aligner_align_small() {
-        let a = SmithWaterman::new();
-        let alignment = a.align(
+        let alignment = align(
             vec!["GTT".to_string(), "GAT".to_string()],
-            Scoring {
+            &STRATEGY,
+            &Scoring {
                 matrix: NUC_4_4::MATRIX,
                 gap_opening: -2f32,
                 gap_extension: -2f32,
@@ -79,10 +84,10 @@ mod tests {
     /// same penalty for gap opening and extension
     #[test]
     fn test_aligner_align() {
-        let a = SmithWaterman::new();
-        let alignment = a.align(
+        let alignment = align(
             vec!["TGTTACGG".to_string(), "GGTTGACTA".to_string()],
-            Scoring {
+            &STRATEGY,
+            &Scoring {
                 matrix: NUC_4_4::MATRIX,
                 gap_opening: -2f32,
                 gap_extension: -2f32,
@@ -99,10 +104,10 @@ mod tests {
     /// https://en.wikipedia.org/wiki/Smith%E2%80%93Waterman_algorithm#Gap_penalty_example
     #[test]
     fn test_aligner_align_same_gap_extension() {
-        let a = SmithWaterman::new();
-        let alignment = a.align(
+        let alignment = align(
             vec!["TACGGGCCCGCTAC".to_string(), "TAGCCCTATCGGTCA".to_string()],
-            Scoring {
+            &STRATEGY,
+            &Scoring {
                 matrix: NUC_4_4::MATRIX,
                 gap_opening: -1f32,
                 gap_extension: -1f32,
@@ -125,10 +130,10 @@ mod tests {
     /// https://en.wikipedia.org/wiki/Smith%E2%80%93Waterman_algorithm#Gap_penalty_example
     #[test]
     fn test_aligner_align_small_gap_extension() {
-        let a = SmithWaterman::new();
-        let alignment = a.align(
+        let alignment = align(
             vec!["TAGCCCTATCGGTCA".to_string(), "TACGGGCCCGCTAC".to_string()],
-            Scoring {
+            &STRATEGY,
+            &Scoring {
                 matrix: NUC_4_4::MATRIX,
                 gap_opening: -5f32,
                 gap_extension: -1f32,
