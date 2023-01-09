@@ -23,13 +23,13 @@ struct Args {
     #[arg(short, long, default_value = "BLOSUM62")]
     replacement_matrix: String,
 
-    /// Cost of a gap opening
+    /// Penalty of opening a gap
     #[arg(long, default_value_t = -1.0)]
-    gap_opening_cost: f32,
+    gap_opening_penalty: f32,
 
-    /// Cost of extending a gap
+    /// Penalty of extending a gap
     #[arg(long, default_value_t = -1.0)]
-    gap_extension_cost: f32,
+    gap_extension_penalty: f32,
 }
 
 fn main() {
@@ -55,15 +55,12 @@ fn main() {
             "nuc" => matrices::NUC_4_4::MATRIX,
             _ => panic!("Unknown matrix"),
         },
-        gap_opening: args.gap_opening_cost,
-        gap_extension: args.gap_extension_cost,
+        gap_opening: args.gap_opening_penalty,
+        gap_extension: args.gap_extension_penalty,
     };
 
-    // Get the strategy
-    let strategy = args.algo.strategy();
-
     // Align a couple sequences
-    let alignment = align(vec![seq1.seq, seq2.seq], strategy, scoring);
+    let alignment = align(vec![seq1.seq, seq2.seq], args.algo.strategy(), scoring);
 
     println!("{}", alignment)
 }
